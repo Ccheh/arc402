@@ -7,11 +7,22 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "demo:server": "tsx examples/server.ts",
     "demo:agent": "tsx examples/agent.ts",
-    "demo": "tsx examples/run.ts"
+    "demo": "tsx examples/run.ts",
+    "demo:stress": "tsx examples/stress-batch.ts",
+    "demo:adversarial": "tsx examples/adversarial.ts"
   },
-  "keywords": ["arc", "usdc", "micropayments", "agent", "x402", "stablecoin"],
+  "keywords": [
+    "arc",
+    "usdc",
+    "micropayments",
+    "agent",
+    "x402",
+    "stablecoin"
+  ],
   "license": "MIT",
   "dependencies": {
     "express": "^5.2.1",
@@ -21,6 +32,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.7.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   }
 }

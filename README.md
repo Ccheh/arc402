@@ -30,6 +30,7 @@
 | **20-claim batch settled in one tx** (5 agents × 4 claims) | tx [`0xce39b45b...`](https://testnet.arcscan.app/tx/0xce39b45baeab833ce3e02b96c3893a4511f5d4e94db27f9589162a7f66056f81) — gas 732,180 (36,609/claim) |
 | **5/5 adversarial attacks blocked** | replay, expired, wrong-service, forged-sig, V1→V2 cross-version — each reverted with correct custom error |
 | **depositFor sponsorship** | agents zero-gas onboarded via main wallet pre-funding their escrow |
+| **LLM-style paid endpoint** (3 agents × 2 calls, batched) | OpenAI-compatible `/v1/chat/completions` priced at 0.005 USDC/call; 106ms avg latency; 6 claims settled in [`0xd93df460...`](https://testnet.arcscan.app/tx/0xd93df4607856fa09d06e76b54dd98d05ceaf6c2a167a79108f2bfa17f3be3a97) |
 | **Single lifecycle** (V1 origin demo) | deposit / 402 / sign / settle — [`0x1931d9...`](https://testnet.arcscan.app/tx/0x1931d96f0f5ce0037d632325383d78e88f0386978251cd663d96ddb27d3b58e3) |
 
 ## Economics on real Arc Testnet (measured, not modeled)
@@ -62,6 +63,9 @@ npx tsx examples/stress-batch.ts
 
 # 3. Reproduce 5 adversarial attacks (must all revert)
 npx tsx examples/adversarial.ts
+
+# 4. Demo: OpenAI-compatible paid LLM endpoint, 3 agents x 2 calls, batched settle
+npx tsx examples/llm-paid-demo.ts
 ```
 
 ## Architecture at a glance
@@ -109,7 +113,7 @@ See [`docs/spec.md`](docs/spec.md) for full positioning.
 
 - **W1** ✅ V1 contract + Node SDK + single-claim demo
 - **W2** ✅ V2 with batched settlement + session keys + 20-claim live test + 5 adversarial proofs
-- **W3** Python SDK · formal Arc402 spec · ERC-8004 read integration · OpenRouter LLM gateway example
+- **W3** ✅ vitest SDK test suite (27/27) ✅ LLM-style paid endpoint demo (batched, on-chain settled) · ⏳ Python SDK · formal Arc402 spec · ERC-8004 read integration
 - **W4** Next.js demo marketplace · Circle Developer Grant submission · audit + mainnet deploy plan
 
 ## Author

@@ -36,6 +36,9 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Private working files (LOI drafts, daily checklists, scratch)
+private/
+
 # OS / Editor
 .DS_Store
 Thumbs.db

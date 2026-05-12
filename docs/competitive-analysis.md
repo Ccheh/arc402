@@ -4,16 +4,56 @@
 
 ## TL;DR
 
-| Solution | Latency per call | Cost per call ($0.005 SaaS price) | Agent-side friction | Service-side friction | Counter-party risk |
+| Solution | Latency | Cost @ $0.005 SaaS | Identity-aware pricing | SLA / refund | Permissionless seller |
 |---|---|---|---|---|---|
-| **Cadence (Arc402)** | **~50ms** (off-chain verify) | **$0.0007** (batched) | Deposit once, sign per call | 3 lines of middleware | Limited to deposit balance |
-| Coinbase x402 (on Base) | ~100ms | ~$0.001 (Base gas) | Same model | Same model | Same |
-| Lightning Network | 100ms-1s (channel state) | $0.0001 if channel pre-opened | Channel setup + capacity mgmt | Node operation | Channel partner balance |
-| Traditional Stripe billing | 200-800ms | Stripe takes ~3% + $0.30 | Account + API key + KYC | Account + KYC | Stripe holds funds 2-7 days |
-| Direct on-chain per-tx | 1-12s (block time) | $0.003+ (any chain's gas) | Sign per call | Verify per call | None |
-| Subscription model (flat fee) | N/A | N/A | Pre-commit usage | Plan management | Pre-paid fees |
+| **Cadence (Arc402)** | **~50ms** | **$0.0007** (batched) | **✅ via ERC-8004** | **🟡 v0.3 design** | **✅ MIT, self-host** |
+| Circle Nanopayments | ~100ms | similar (batched) | ❌ balance only | ❌ | ❌ form-gated |
+| Coinbase x402 (Base) | ~100ms | ~$0.001 | ❌ | ❌ | ✅ |
+| Lightning Network | 100ms-1s | $0.0001 if pre-opened | ❌ | ❌ | ✅ but channel-managed |
+| Stripe | 200-800ms | 2.9% + $0.30 | ✅ via fraud signals | ✅ | ❌ KYC-gated |
+| Direct on-chain per-tx | 1-12s | $0.003+ | ❌ | ❌ | ✅ |
 
-**Conclusion**: Cadence's per-call cost and latency profile are competitive with Lightning's (state-channel-based) without the channel-setup overhead. Versus Stripe, the gap is ~40x cost reduction (no payment processor cut) and zero KYC. Versus x402, the only material difference is Arc-native USDC-as-gas vs. Base's ETH-and-then-USDC pattern.
+**Conclusion**: Cadence's two differentiators against Circle Nanopayments are now (a) permissionless self-hosting and (b) **two AI-native primitives Circle's settlement layer structurally can't deliver**: reputation-tiered pricing via ERC-8004 (live) and refundable claims (v0.3 design).
+
+## 0. vs Circle Nanopayments (Apr 29 2026 — the critical comparison)
+
+**What Circle shipped**: An official x402 + Gateway batched-settlement product, announced 2026-04-29 by Tim Baker. Functionally the same protocol pattern as Arc402 — HTTP 402 negotiation, off-chain auth, batched on-chain settlement.
+
+**What's identical**:
+- HTTP 402 + signed auth pattern (same standard family)
+- Pre-deposit escrow (Gateway Wallet ≈ PaymentEscrowV2)
+- Batched settlement to amortize gas
+- Target use cases (per-call APIs, agent payments, usage-based billing)
+
+**What's different**:
+
+| Aspect | Circle Nanopayments | Cadence/Arc402 |
+|---|---|---|
+| Source / license | Closed product, Circle-operated | MIT-licensed, deployable by anyone |
+| Seller onboarding | Form-gated (`agents.circle.com` review) | Permissionless — clone repo, deploy contract, run middleware |
+| Signing scheme | EIP-3009 (single-tx authorization) | EIP-712 custom domain (versioned, replay-isolated across V_n → V_{n+1}) |
+| Identity awareness | None at settlement | **Reputation-tiered pricing via ERC-8004 (live)** — different price for verified vs unverified agents, evaluated inline in middleware |
+| Quality / SLA | None | **Refundable claims** (v0.3 design proposal in spec.md §12) — opt-in dispute window before service collects |
+| Escrow operator | Circle | Self-deployed contract; user chooses operator |
+| Composability with rest of Circle stack | Native | **Designed to compose**: reads Circle's ERC-8004, can settle against Circle's USDC, complements ERC-8183 jobs |
+
+**Cadence's position**: **complementary, not competitive**. The same protocol pattern, but Cadence ships:
+- (a) the **OSS reference seller-side middleware** Tim Baker explicitly called for in his Apr 29 blog
+- (b) **two AI-native primitives** Nanopayments doesn't have: identity-aware pricing (live) and SLA-aware refundable claims (design)
+
+Both Nanopayments and Cadence can win simultaneously, in different deployment postures (managed-platform vs self-hosted reference). This is the GitHub vs GitHub Enterprise dynamic, the WordPress.com vs WordPress.org dynamic.
+
+## 0b. vs Crumb (Arc hackathon spotlight 2026-04-30)
+
+**What Crumb is**: A merchant-facing product built on Circle Nanopayments, settling on Arc. Use cases: pay-per-use APIs, QR/peer transfers, merchant checkout. Founder Taylor Ferran, spotlight video with Sam Sealey (Circle Director of Community) at 29.6K views.
+
+**Why Cadence doesn't compete with Crumb**:
+- Crumb = **product layer** (like Stripe Checkout — point-of-sale, merchant onboarding, consumer UX)
+- Cadence = **developer layer** (like Stripe.js + Stripe Connect — backend SDK + protocol)
+
+Different markets, different audiences. Crumb sells to coffeeshops; Cadence sells to backend developers shipping AI tools. The two can coexist; Crumb could even use Cadence under the hood.
+
+
 
 ## 1. vs. Coinbase x402 (on Base)
 

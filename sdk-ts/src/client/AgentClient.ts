@@ -121,12 +121,34 @@ export class AgentClient {
     const first = await fetch(url, init);
     if (first.status !== 402) return first;
 
-    const body = (await first.json()) as { requirements: PaymentRequirements };
+    const body = (await first.json()) as {
+      requirements: PaymentRequirements & {
+        reputationAmount?: string;
+        reputation?: { identityRegistry: `0x${string}`; minTokens: number; chainId: number };
+      };
+    };
     const reqd = body.requirements;
+
+    // If the server advertises a reputation discount tier and we qualify, sign
+    // for the lower amount. (This is Cadence-specific — Nanopayments / x402
+    // do not have this in their requirements doc.)
+    let amount = BigInt(reqd.amount);
+    if (reqd.reputationAmount && reqd.reputation) {
+      try {
+        const { getAgentIdentity } = await import("../erc8004.js");
+        const identity = await getAgentIdentity(this.address, this.chain);
+        if (identity.tokenCount >= reqd.reputation.minTokens) {
+          amount = BigInt(reqd.reputationAmount);
+        }
+      } catch {
+        // identity lookup failed -- fall back to base tier (safer)
+      }
+    }
+
     const claim = await this.signClaim({
       escrow: reqd.escrow,
       service: reqd.service,
-      amount: BigInt(reqd.amount),
+      amount,
     });
     const headers = new Headers(init.headers);
     headers.set(CLAIM_HEADER, encodeClaim(claim));

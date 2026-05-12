@@ -39,11 +39,15 @@ Yet AI agents will increasingly need to pay for:
 
 ## Field 5: Our solution
 
-**Cadence**, built on the **Arc402** protocol, fills this gap with three primitives:
+**Cadence**, built on the **Arc402** protocol, ships five primitives:
 
-1. **Pre-deposit escrow**: An agent deposits USDC once into an on-chain escrow contract (`PaymentEscrowV2`).
+1. **Pre-deposit escrow** (`PaymentEscrowV2`): An agent deposits USDC once into the on-chain contract.
 2. **Off-chain signed claims**: Per API call, the agent signs an EIP-712 claim authorizing the service to pull `X` USDC. **No on-chain transaction per call.** Claims verify in ~50ms locally.
-3. **Batched settlement**: The service queues claims and submits them in batch via `claimBatch(Claim[])` when economic — typically every N seconds or N claims. **Per-claim gas drops 52%** (32k vs 69k single).
+3. **Batched settlement** (`claimBatch`): The service queues claims and submits them in batch when economic. **Per-claim gas drops 52%** (32k vs 69k single, measured on chain).
+4. **Reputation-tiered pricing via ERC-8004 (LIVE)**: Cadence middleware reads the agent's ERC-8004 IdentityRegistry status inline and applies a discounted price tier to verified agents. *This primitive does not exist in Circle Nanopayments or Coinbase x402* — both settle based on USDC balance only and have no native identity-awareness. By composing with Circle's own ERC-8004 standard, Cadence delivers per-call identity-gated pricing that Circle's hosted settlement layer structurally cannot.
+5. **Refundable claims (v0.3 design)**: Spec proposal for opt-in dispute window before service collection. Agent can claw back funds within the window if service delivered poor output. SLA-aware payments — see [spec.md §12](https://github.com/Ccheh/arc402/blob/main/docs/spec.md).
+
+**Honest delta vs Circle Nanopayments (announced 2026-04-29)**: Tim Baker's product covers (1), (2), (3). Cadence is the **open-source reference seller-side middleware** he publicly called for in that blog, plus the AI-native extensions (4) and (5). The two compose — a Cadence seller can be Gateway-funded; an Arc402 batch can settle alongside Gateway settlement.
 
 **On Arc specifically:**
 - USDC is the **native gas token** — agents never need to acquire another token.
@@ -88,10 +92,11 @@ This is **not a deck pitch** — it's a working system you can clone and run in 
 
 I propose 5 milestones at 2-3 week cadence. Each is verifiable on-chain or in GitHub.
 
-### M1 (Week 2): First production integration
-- Find and integrate 1 real AI tool / API as a Cadence-paid endpoint (target: an open-source LLM wrapper or a real-world API like translation, OCR, or geocoding).
-- Publish integration as a public reference in `examples/integrations/`.
-- Verification: live URL + linked open-source repo + one real on-chain settlement.
+### M1 (Week 2): Be the canonical seller-side reference for Circle Nanopayments
+- Position Cadence as the open-source seller-side middleware Tim Baker called for in his 2026-04-29 Nanopayments blog.
+- Ship one real AI-tool integration as a Cadence-paid endpoint (target: open-source LLM wrapper or real-world API).
+- Publish a public reference linked from at least one Circle-controlled property (community.arc.network, agents.circle.com listing, or developer docs).
+- Verification: live URL + open-source repo + one real on-chain settlement + one cross-reference from Circle infrastructure.
 - **Disbursement: $5,000**
 
 ### M2 (Week 4): Audit + mainnet readiness

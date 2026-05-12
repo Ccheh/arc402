@@ -304,15 +304,112 @@ Migration: balances do NOT auto-migrate. Agents withdraw from V_n via `withdraw(
 
 This policy avoids the security surface of an upgradeability proxy while accepting an operational chore at migration time.
 
-## 11. Open questions
+## 11. Reputation-tiered pricing (Cadence extension)
 
-The following are deliberately not specified in v0.2 and are slated for v0.3+ work:
+A primitive that distinguishes Cadence from Circle Nanopayments / Coinbase x402 / Gateway: **the seller can offer a reduced price to agents whose on-chain identity meets a threshold**, with identity discovery happening inline in the middleware.
 
-- **Pricing-discovery interface**: how does an agent learn what an endpoint charges without first being 402'd? Some services may want a published pricing manifest.
-- **Dispute mechanism**: optimistic-window slashing if a service collects a claim without delivering value.
-- **Multi-asset support**: extending beyond native-gas USDC to EURC and other Arc-native stablecoins.
-- **Sub-millicent settlement**: state channels or Merkle-batched proofs for service prices below $0.002/call.
-- **Cross-chain settlement**: an agent on chain A pays a service on chain B via CCTP-bridged claims.
-- **ERC-8004 integration depth**: read-only (current) vs. writing reputation events on disputes.
+### 11.1 Service-side declaration
 
-Each of these is its own design exercise. Contributions welcome via the [GitHub repo](https://github.com/Ccheh/arc402).
+A Cadence-protected endpoint may advertise *two* amounts in its 402 response:
+
+```json
+{
+  "scheme": "arc402",
+  "chainId": 5042002,
+  "escrow": "0x...",
+  "service": "0x...",
+  "amount": "5000000000000000",          // base tier: 0.005 USDC
+  "reputationAmount": "1000000000000000", // discounted tier: 0.001 USDC
+  "reputation": {
+    "identityRegistry": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+    "minTokens": 1,
+    "chainId": 5042002
+  }
+}
+```
+
+### 11.2 Agent-side decision
+
+The Cadence agent SDK reads the requirements, calls `IdentityRegistry.balanceOf(agent)` inline, and signs a claim for `reputationAmount` if `tokenCount >= reputation.minTokens`; otherwise for `amount`.
+
+### 11.3 Service-side verification
+
+When the seller's middleware receives the claim, it checks `claim.amount`:
+- If `claim.amount >= amount`, accept (base tier).
+- Else if `claim.amount >= reputationAmount`, re-verify the agent's identity inline; if qualified, accept (discount tier); else 402.
+
+This makes reputation a **payment primitive**, not just an off-chain label.
+
+### 11.4 Why this matters
+
+- **Compatible** with the rest of Arc402 — same EIP-712 claim signature, same settlement path
+- **Composes** with Circle's published ERC-8004 standard rather than inventing a new registry
+- **Not in Circle Nanopayments / Gateway** — those settle based on USDC balance only and have no native identity-awareness
+- **Enables a class of features** Circle's hosted stack structurally cannot: per-identity rate limits, KYC-gated pricing, reputation-as-collateral patterns
+
+## 12. v0.3 design proposal: refundable claims (SLA-aware payments)
+
+> Not yet in V2 contract. Documented here as a design proposal for v0.3 / W4 work.
+
+### 12.1 Problem
+
+Today, once an agent signs a claim and the service settles, the agent has no on-chain recourse if the service delivered garbage. AI outputs in particular are uneven; an agent paying 0.005 USDC for a useless LLM response has no native way to claw it back.
+
+This is **not** addressed by:
+- Circle Nanopayments (pure-payment layer, no quality awareness)
+- x402 (same)
+- Lightning (HTLCs are simple locks, no AI-output semantics)
+- ERC-8183 (evaluator-arbitrated, but too heavy for per-call streaming)
+
+### 12.2 Proposed mechanism: opt-in refund window
+
+```solidity
+struct RefundableClaim {
+    address agent;
+    uint256 amount;
+    uint256 nonce;
+    uint256 expiry;
+    uint64  refundWindow; // seconds after settle within which agent can dispute
+    bytes32 serviceCommitment; // hash of (e.g.) the agent's intended use, or the service's quality pledge
+    bytes signature;
+}
+
+function claimWithRefundWindow(RefundableClaim calldata c) external;
+function disputeAndRefund(uint256 nonce, bytes32 disputeAttestation) external;
+function collectAfterWindow(uint256 nonce) external;
+```
+
+Flow:
+1. Service calls `claimWithRefundWindow`. USDC is debited from agent's escrow but **escrowed inside the contract** for `refundWindow` seconds, not transferred to the service yet.
+2. During the window:
+   - Agent can call `disputeAndRefund(nonce, attestation)`. Funds return to the agent.
+   - The dispute attestation hash is stored on chain — for accountability / off-chain arbitration.
+3. After the window expires, service calls `collectAfterWindow(nonce)` to receive the funds.
+
+### 12.3 Incentive analysis
+
+- **Honest service + honest agent**: window expires without dispute; service collects. Same outcome as V2 with a delay.
+- **Bad service + honest agent**: agent disputes; agent recovers funds. Service can be blacklisted off-chain.
+- **Honest service + dishonest agent (dispute spam)**: service stops serving them. Dispute frequency becomes a reputation signal (writable to ERC-8004 ReputationRegistry — future work).
+- **No mutual cooperation**: cancels out the same way HTLCs cancel out on Lightning — no party gets the funds.
+
+### 12.4 Open questions
+
+- Service deposit / slashing for repeated dispute losses?
+- Standardised dispute attestation format?
+- Integration with ERC-8004 ReputationRegistry (write-side, not just read)?
+- Refund-window batching: can `claimBatchWithRefund` exist, and how does it accounting?
+
+This section is a **design proposal**, not implementation. The author commits to drafting an EIP-style proposal alongside the formal v0.3 spec once V2 audit is complete.
+
+## 13. Multi-asset, cross-chain, and other open questions
+
+Deliberately not specified yet (slated for v0.4+):
+
+- **Multi-asset support**: EURC and other Arc-native stablecoins
+- **Sub-millicent settlement**: state channels or Merkle-batched proofs for service prices below $0.002/call
+- **Cross-chain settlement**: an agent on chain A pays a service on chain B via CCTP-bridged claims
+- **ERC-8004 write-side integration**: writing reputation events on disputes (see §12)
+- **EIP-3009 interop layer**: translator so the same payload can be presented to Circle Gateway and Arc402
+
+Contributions welcome via the [GitHub repo](https://github.com/Ccheh/arc402).

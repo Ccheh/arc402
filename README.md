@@ -112,7 +112,7 @@ See [`docs/spec.md`](docs/spec.md) for full positioning.
 | [`sdk-ts/`](sdk-ts/) | TypeScript SDK — `requirePayment` middleware, `AgentClient`, `settle`, `settleBatch` |
 | [`sdk-ts/examples/`](sdk-ts/examples/) | Live Arc Testnet demos: `run.ts`, `stress-batch.ts`, `adversarial.ts` |
 | [`sdk-py/`](sdk-py/) | Python SDK (W3) |
-| [`web/`](web/) | Marketing/demo site (W4) |
+| [`web/`](web/) | Static landing page (deployable to GitHub Pages / Vercel zero-config) |
 | [`docs/`](docs/) | Protocol spec, positioning |
 
 ## Roadmap

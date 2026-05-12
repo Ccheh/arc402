@@ -6,6 +6,8 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-blue)](contracts/foundry.toml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](sdk-ts/tsconfig.json)
 
+> 🆕 **New companion protocol shipped: [Crucible](https://github.com/Ccheh/crucible)** — prediction-market-settled quality outcomes layered ABOVE Cadence's payment escrow. Different concern, deliberately decoupled. Cadence stays focused as the OSS reference for the Nanopayments pattern. Crucible adds quality-conditional settlement that Nanopayments / x402 / Lightning all lack.
+
 > **Streaming USDC micropayments for AI agents on Arc.**
 >
 > Cadence is the developer brand. **Arc402** is the underlying open protocol (and the on-chain EIP-712 domain). The pair is the missing streaming-payment layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack -- letting any API charge per call in USDC with sub-cent on-chain cost when batched, zero on-chain overhead per request, and gas-free agent onboarding via the sponsorship pattern.

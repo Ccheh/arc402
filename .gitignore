@@ -39,6 +39,9 @@ venv/
 # Private working files (LOI drafts, daily checklists, scratch)
 private/
 
+# Claude Code session state
+.claude/
+
 # OS / Editor
 .DS_Store
 Thumbs.db

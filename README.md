@@ -1,5 +1,11 @@
 # Cadence
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Arc Testnet](https://img.shields.io/badge/Arc%20Testnet-V2%20live-blue)](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d)
+[![Tests](https://img.shields.io/badge/tests-57%2F57%20passing-success)](#)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.28-blue)](contracts/foundry.toml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](sdk-ts/tsconfig.json)
+
 > **Streaming USDC micropayments for AI agents on Arc.**
 >
 > Cadence is the developer brand. **Arc402** is the underlying open protocol (and the on-chain EIP-712 domain). The pair is the missing streaming-payment layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack -- letting any API charge per call in USDC with sub-cent on-chain cost when batched, zero on-chain overhead per request, and gas-free agent onboarding via the sponsorship pattern.
@@ -113,7 +119,7 @@ See [`docs/spec.md`](docs/spec.md) for full positioning.
 
 - **W1** ✅ V1 contract + Node SDK + single-claim demo
 - **W2** ✅ V2 with batched settlement + session keys + 20-claim live test + 5 adversarial proofs
-- **W3** ✅ vitest SDK test suite (27/27) ✅ LLM-style paid endpoint demo (batched, on-chain settled) ✅ Python SDK MVP (`cadence-sdk`) ✅ ERC-8004 IdentityRegistry read (live on Arc Testnet) · ⏳ formal Arc402 spec polish · audit prep
+- **W3** ✅ vitest SDK test suite (27/27) ✅ LLM-style paid endpoint demo (batched, on-chain settled) ✅ Python SDK MVP (`cadence-sdk`) ✅ ERC-8004 IdentityRegistry read (live on Arc Testnet) ✅ [Security analysis + audit prep doc](docs/security-analysis.md) ✅ GitHub Actions CI ✅ LangChain integration example · ⏳ formal Arc402 spec polish · independent audit (Grant M2)
 - **W4** Next.js demo marketplace · Circle Developer Grant submission · audit + mainnet deploy plan
 
 ## Author

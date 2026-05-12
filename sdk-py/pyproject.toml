@@ -2,7 +2,7 @@
 name = "cadence-sdk"
 version = "0.0.1"
 description = "Python SDK for Cadence -- streaming USDC micropayments for AI agents on Arc (Arc402 protocol)"
-authors = [{ name = "Zen Chen", email = "ccheh4@gmail.com" }]
+authors = [{ name = "Zen Chen", email = "90767028+Ccheh@users.noreply.github.com" }]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"

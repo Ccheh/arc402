@@ -152,7 +152,7 @@ A focused review of this surface should cover:
 
 Self-disclosed limits and risks are listed throughout this document. No security incidents to date. No known exploits in testnet usage. The contract has not been mainnet-deployed.
 
-For responsible disclosure of any issue found in this contract, contact: `ccheh4@gmail.com` (PGP key TBD).
+For responsible disclosure of any issue found in this contract, please open a private security advisory on the GitHub repo (`Security` tab → `Report a vulnerability`). Do not disclose publicly until coordinated.
 
 ---
 

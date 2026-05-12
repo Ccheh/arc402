@@ -2,78 +2,120 @@
 
 > **Streaming USDC micropayments for AI agents on Arc.**
 >
-> The missing layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack — Arc402 lets any API charge USDC per call, with zero on-chain overhead per request.
+> The missing streaming-payment layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack. Arc402 lets any API charge per call in USDC with sub-cent on-chain cost when batched, zero on-chain overhead per request, and gas-free agent onboarding via the sponsorship pattern.
 
-## Status: live on Arc Testnet
+## On-chain status
 
-| | |
+| | Value |
 |---|---|
-| **PaymentEscrow contract** | [`0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98`](https://testnet.arcscan.app/address/0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98) |
-| **Chain** | Arc Testnet (chainId `5042002`) |
-| **Tests** | 16/16 passing, 512 fuzz runs |
-| **End-to-end demo** | ✅ deposit → 402 → signed claim → settle, verified on-chain |
-| **SDK** | `@arc402/sdk` v0.0.1 (TypeScript) |
+| **PaymentEscrowV2** (current) | [`0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d`](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d) |
+| **PaymentEscrowV1** (legacy, historical record) | [`0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98`](https://testnet.arcscan.app/address/0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98) |
+| Chain | Arc Testnet (chainId `5042002`) |
+| V2 contract tests | **30/30** passing (15 V1 + 15 V2 inc. fuzz + gas curve) |
+| V2 EIP-712 domain version | `"2"` — sigs do not cross-replay with V1 |
+| License | MIT |
 
-## Why this exists
+## What V2 adds over V1
 
-Circle's Arc makes USDC the native gas token, so per-call payments cost sub-cent in fees. But the existing primitives don't fit per-API-call billing:
+1. **`claimBatch(Claim[])`** — settle N claims in one tx. Per-claim gas drops from 69k to **32-37k** (50%+ savings).
+2. **`depositFor(agent)`** — third-party sponsorship; agent's escrow can be funded **without** the agent ever holding gas.
+3. **`authorizeSession(sessionKey, expiry)`** — agent's master key delegates claim-signing to an ephemeral session key with expiry.
+4. **Cross-version EIP-712 isolation** — V1 signatures cannot be replayed against V2 (confirmed live in adversarial test #5 below).
 
-- **ERC-8183 (job escrow)** is multi-tx and evaluator-gated — overkill for "charge $0.001 per LLM call"
-- **`@circle-fin/app-kit`** covers bridging/swapping/sending, not per-call billing
-- **Cross-chain payment standards** assume on-chain settlement per tx, which is uneconomic at sub-cent prices
+## Live on-chain evidence (Arc Testnet)
 
-**Arc402 fills the gap**: agents pre-deposit USDC once, then sign cheap off-chain EIP-712 claims per API call. Services collect and settle in batch when economic.
+| Experiment | Proof |
+|---|---|
+| **V2 deployment** | tx [`0xed61c372...`](https://testnet.arcscan.app/tx/0xed61c3721e183f8e9032e590f5a1fa47b2e368208cfc69653b8e0a5f3e4053ab) |
+| **20-claim batch settled in one tx** (5 agents × 4 claims) | tx [`0xce39b45b...`](https://testnet.arcscan.app/tx/0xce39b45baeab833ce3e02b96c3893a4511f5d4e94db27f9589162a7f66056f81) — gas 732,180 (36,609/claim) |
+| **5/5 adversarial attacks blocked** | replay, expired, wrong-service, forged-sig, V1→V2 cross-version — each reverted with correct custom error |
+| **depositFor sponsorship** | agents zero-gas onboarded via main wallet pre-funding their escrow |
+| **Single lifecycle** (V1 origin demo) | deposit / 402 / sign / settle — [`0x1931d9...`](https://testnet.arcscan.app/tx/0x1931d96f0f5ce0037d632325383d78e88f0386978251cd663d96ddb27d3b58e3) |
 
-## How it composes with Circle's stack
+## Economics on real Arc Testnet (measured, not modeled)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ Layer            │ Tool                  │ Arc402 role        │
-├──────────────────────────────────────────────────────────────┤
-│ Identity         │ ERC-8004              │ Read (trust signal)│
-│ Discrete jobs    │ ERC-8183              │ Complementary      │
-│ Cross-chain liq. │ @circle-fin/app-kit   │ Build as adapter   │
-│ Smart accounts   │ ZeroDev (ERC-4337)    │ Build on top of    │
-│ ▸ Streaming pay  │ (gap)                 │ ★ Arc402 fills it  │
-└──────────────────────────────────────────────────────────────┘
-```
+At Arc's observed gas price of **20 gwei** (verified in batch tx above):
 
-See [docs/spec.md](docs/spec.md) for the detailed mapping.
+| Service price per call | Single-claim margin | Batched margin (n≥10) |
+|---|---|---|
+| $0.01 (typical SaaS API) | 86% | **93%** |
+| $0.005 (cheap API) | 72% | **85%** |
+| $0.002 (low-cost LLM) | 31% | **63%** |
+| $0.001 (premium nanopayment) | -38% | **-27%** -- needs state channel / Merkle batching, future work |
 
-## Try the demo in 30 seconds
+**Arc402 is economically viable for $0.002+ per call when batched.** Sub-millicent payments require next-gen settlement (open W3).
+
+## Reproduce everything in 5 minutes
 
 ```sh
 git clone https://github.com/Ccheh/arc402.git
 cd arc402
 git submodule update --init --recursive
 
-# contracts: run the unit + fuzz tests
-cd contracts && forge test -vv && cd ..
+# 1. Run all 30 contract tests (V1 + V2 + fuzz + gas curve)
+cd contracts && forge test -vv
 
-# SDK: end-to-end demo on Arc Testnet
-# (requires PRIVATE_KEY and ESCROW_ADDRESS in .env -- see .env.example)
-cd sdk-ts && npm install && npm run demo
+# 2. Reproduce the 20-claim batch settlement on live Arc Testnet
+#    (requires PRIVATE_KEY, SERVICE_PRIVATE_KEY, ESCROW_V2_ADDRESS in .env)
+cd ../sdk-ts && npm install
+npx tsx examples/stress-batch.ts
+
+# 3. Reproduce 5 adversarial attacks (must all revert)
+npx tsx examples/adversarial.ts
 ```
 
-The demo boots an Express server with `/weather` priced at 0.01 USDC, then drives an agent through the full lifecycle: deposit → 402 → claim → settle. Every step is a real on-chain tx visible on [testnet.arcscan.app](https://testnet.arcscan.app).
+## Architecture at a glance
+
+```
+┌──────────────┐   ┌────────────────────────────────┐   ┌──────────────┐
+│ Agent        │   │ Service                         │   │ PaymentEscrow│
+│ (smart acc / │   │ ┌──────────────┐ ┌───────────┐  │   │ V2 contract  │
+│ EOA + sess.) │──▶│ │ requirePayment│ │ settleBatch│ │──▶│ on Arc       │
+│              │HTTP   middleware    │ │ flusher    │ │   │              │
+│ AgentClient  │   │ │ (off-chain    │ │ (every     │ │   │ - claimBatch │
+│ - deposit    │   │ │  EIP-712 ver) │ │  5s)       │ │   │ - depositFor │
+│ - signClaim  │   │ └──────────────┘ └───────────┘  │   │ - sessions   │
+│ - fetch()    │   └────────────────────────────────┘   └──────────────┘
+└──────────────┘
+                  Per call:  HTTP 402 → sign claim → 200
+                  Server:    queue claim → flush in batch when economic
+                  Settle:    1 tx settles N claims → service gets USDC
+```
+
+## Where Arc402 fits in Circle's stack
+
+| Layer | Tool | Arc402's relationship |
+|---|---|---|
+| Identity | ERC-8004 | **read** (planned: surface reputation in middleware) |
+| Discrete jobs | ERC-8183 | **complementary** (large discrete contracts vs continuous stream) |
+| Cross-chain | `@circle-fin/app-kit` | adapter pattern (planned) |
+| Smart accounts | ZeroDev / Pimlico | optional layer on top (protocol session keys built-in) |
+| **Streaming payments** | *(gap)* | **★ Arc402** |
+
+See [`docs/spec.md`](docs/spec.md) for full positioning.
 
 ## Repository layout
 
-| Folder | What |
+| Folder | Purpose |
 |---|---|
-| [`contracts/`](contracts/) | Solidity contracts (Foundry) — `PaymentEscrow.sol` and tests |
-| [`sdk-ts/`](sdk-ts/) | TypeScript SDK — `requirePayment` middleware + `AgentClient` |
+| [`contracts/`](contracts/) | Solidity — `PaymentEscrow.sol` (V1) + `PaymentEscrowV2.sol` (current) + 30 tests |
+| [`sdk-ts/`](sdk-ts/) | TypeScript SDK — `requirePayment` middleware, `AgentClient`, `settle`, `settleBatch` |
+| [`sdk-ts/examples/`](sdk-ts/examples/) | Live Arc Testnet demos: `run.ts`, `stress-batch.ts`, `adversarial.ts` |
 | [`sdk-py/`](sdk-py/) | Python SDK (W3) |
-| [`web/`](web/) | Next.js demo marketplace (W4) |
-| [`docs/`](docs/) | Protocol spec, Circle-stack positioning |
+| [`web/`](web/) | Marketing/demo site (W4) |
+| [`docs/`](docs/) | Protocol spec, positioning |
 
 ## Roadmap
 
-- **W1** ✅ Escrow contract + Node SDK + end-to-end Arc Testnet demo
-- **W2** Smart-account agent wallet (ZeroDev session keys) + batched settlement
-- **W3** Python SDK + formal Arc402 protocol spec
-- **W4** Next.js demo marketplace + Circle Developer Grant submission
+- **W1** ✅ V1 contract + Node SDK + single-claim demo
+- **W2** ✅ V2 with batched settlement + session keys + 20-claim live test + 5 adversarial proofs
+- **W3** Python SDK · formal Arc402 spec · ERC-8004 read integration · OpenRouter LLM gateway example
+- **W4** Next.js demo marketplace · Circle Developer Grant submission · audit + mainnet deploy plan
+
+## Author
+
+Built by [Zen Chen](https://github.com/Ccheh) — Strategy Researcher @ Polymarket. MSc Data Science (Sheffield).
 
 ## License
 
-MIT
+[MIT](LICENSE)

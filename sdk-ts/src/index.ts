@@ -19,5 +19,7 @@ export { requirePayment } from "./server/requirePayment.js";
 export type { RequirePaymentOptions } from "./server/requirePayment.js";
 export { settle } from "./server/settle.js";
 export type { SettleOptions } from "./server/settle.js";
+export { settleBatch } from "./server/settleBatch.js";
+export type { SettleBatchOptions } from "./server/settleBatch.js";
 export { AgentClient } from "./client/AgentClient.js";
 export type { AgentClientOptions } from "./client/AgentClient.js";

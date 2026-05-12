@@ -24,11 +24,11 @@ export function randomNonce(): bigint {
   return n;
 }
 
-/** EIP-712 domain for Arc402 escrow at `verifyingContract`. */
-export function buildDomain(escrow: Hex, chainId: number) {
+/** EIP-712 domain for Arc402 escrow at `verifyingContract`. Defaults to V2 (current). */
+export function buildDomain(escrow: Hex, chainId: number, version: "1" | "2" = "2") {
   return {
     name: "Arc402",
-    version: "1",
+    version,
     chainId,
     verifyingContract: escrow,
   } as const;

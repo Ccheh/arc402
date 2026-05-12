@@ -153,7 +153,7 @@ Cadence is a portfolio-quality reference implementation, not a production paymen
 
 ## Author
 
-Built by [Zen Chen](https://github.com/Ccheh) — Strategy Researcher @ Polymarket. MSc Data Science (Sheffield).
+Built by [Zen Chen](https://github.com/Ccheh) — MSc Data Science (Sheffield). Building on Arc.
 
 ## License
 

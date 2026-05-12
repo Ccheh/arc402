@@ -113,7 +113,7 @@ See [`docs/spec.md`](docs/spec.md) for full positioning.
 
 - **W1** ✅ V1 contract + Node SDK + single-claim demo
 - **W2** ✅ V2 with batched settlement + session keys + 20-claim live test + 5 adversarial proofs
-- **W3** ✅ vitest SDK test suite (27/27) ✅ LLM-style paid endpoint demo (batched, on-chain settled) · ⏳ Python SDK · formal Arc402 spec · ERC-8004 read integration
+- **W3** ✅ vitest SDK test suite (27/27) ✅ LLM-style paid endpoint demo (batched, on-chain settled) ✅ Python SDK MVP (`cadence-sdk`) ✅ ERC-8004 IdentityRegistry read (live on Arc Testnet) · ⏳ formal Arc402 spec polish · audit prep
 - **W4** Next.js demo marketplace · Circle Developer Grant submission · audit + mainnet deploy plan
 
 ## Author

@@ -1,0 +1,36 @@
+[project]
+name = "cadence-sdk"
+version = "0.0.1"
+description = "Python SDK for Cadence -- streaming USDC micropayments for AI agents on Arc (Arc402 protocol)"
+authors = [{ name = "Zen Chen", email = "ccheh4@gmail.com" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["arc", "usdc", "micropayments", "ai-agents", "stablecoin", "x402", "eip-712"]
+dependencies = [
+    "eth-account>=0.13.0",
+    "web3>=7.5.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ccheh/arc402"
+Repository = "https://github.com/Ccheh/arc402"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cadence"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

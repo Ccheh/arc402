@@ -23,3 +23,5 @@ export { settleBatch } from "./server/settleBatch.js";
 export type { SettleBatchOptions } from "./server/settleBatch.js";
 export { AgentClient } from "./client/AgentClient.js";
 export type { AgentClientOptions } from "./client/AgentClient.js";
+export { ERC8004_ARC_TESTNET, getAgentIdentity } from "./erc8004.js";
+export type { AgentIdentity } from "./erc8004.js";

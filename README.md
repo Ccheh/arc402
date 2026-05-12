@@ -17,7 +17,7 @@
 | **PaymentEscrowV2** (current) | [`0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d`](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d) |
 | **PaymentEscrowV1** (legacy, historical record) | [`0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98`](https://testnet.arcscan.app/address/0x55aFA5Cf28B98DD6DC550F15c075F46B5eaf2a98) |
 | Chain | Arc Testnet (chainId `5042002`) |
-| V2 contract tests | **30/30** passing (15 V1 + 15 V2 inc. fuzz + gas curve) |
+| Contract tests | **34/34** passing (15 V1 + 15 V2 + 3 invariants × 128k random calls + fuzz + gas curve) |
 | V2 EIP-712 domain version | `"2"` — sigs do not cross-replay with V1 |
 | License | MIT |
 

@@ -195,20 +195,23 @@ contract PaymentEscrowV2Test is Test {
     }
 
     function test_session_expired_reverts() public {
+        vm.warp(1_000_000); // explicit baseline
         vm.prank(agent);
         escrow.deposit{value: 10 ether}();
-        uint64 sessionExp = uint64(block.timestamp + 1 hours);
+
+        uint64 sessionExp = uint64(1_000_000 + 1 hours);
         vm.prank(agent);
         escrow.authorizeSession(sessionKey, sessionExp);
 
-        vm.warp(block.timestamp + 2 hours); // past session expiry
+        // Warp to exactly past session expiry, keep claim expiry far in future
+        vm.warp(uint256(sessionExp) + 1);
 
-        uint256 expiry = block.timestamp + 1 hours;
-        bytes memory sig = _signClaim(SESSION_PK, agent, service, 1 ether, 99, expiry);
+        uint256 claimExpiry = block.timestamp + 10 hours;
+        bytes memory sig = _signClaim(SESSION_PK, agent, service, 1 ether, 99, claimExpiry);
 
         vm.prank(service);
         vm.expectRevert(PaymentEscrowV2.SessionExpiredOrUnknown.selector);
-        escrow.claim(agent, 1 ether, 99, expiry, sig);
+        escrow.claim(agent, 1 ether, 99, claimExpiry, sig);
     }
 
     function test_session_revoke_works() public {

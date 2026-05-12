@@ -1,8 +1,8 @@
-# Arc402
+# Cadence
 
 > **Streaming USDC micropayments for AI agents on Arc.**
 >
-> The missing streaming-payment layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack. Arc402 lets any API charge per call in USDC with sub-cent on-chain cost when batched, zero on-chain overhead per request, and gas-free agent onboarding via the sponsorship pattern.
+> Cadence is the developer brand. **Arc402** is the underlying open protocol (and the on-chain EIP-712 domain). The pair is the missing streaming-payment layer below Circle's [ERC-8183](https://docs.arc.network/arc/tutorials/create-your-first-erc-8183-job) jobs and [ERC-8004](https://docs.arc.network/arc/tutorials/register-your-first-ai-agent) identity stack -- letting any API charge per call in USDC with sub-cent on-chain cost when batched, zero on-chain overhead per request, and gas-free agent onboarding via the sponsorship pattern.
 
 ## On-chain status
 
@@ -43,7 +43,7 @@ At Arc's observed gas price of **20 gwei** (verified in batch tx above):
 | $0.002 (low-cost LLM) | 31% | **63%** |
 | $0.001 (premium nanopayment) | -38% | **-27%** -- needs state channel / Merkle batching, future work |
 
-**Arc402 is economically viable for $0.002+ per call when batched.** Sub-millicent payments require next-gen settlement (open W3).
+**Cadence is economically viable for $0.002+ per call when batched.** Sub-millicent payments require next-gen settlement (open W3).
 
 ## Reproduce everything in 5 minutes
 
@@ -82,15 +82,15 @@ npx tsx examples/adversarial.ts
                   Settle:    1 tx settles N claims → service gets USDC
 ```
 
-## Where Arc402 fits in Circle's stack
+## Where Cadence fits in Circle's stack
 
-| Layer | Tool | Arc402's relationship |
+| Layer | Tool | Cadence's relationship |
 |---|---|---|
 | Identity | ERC-8004 | **read** (planned: surface reputation in middleware) |
 | Discrete jobs | ERC-8183 | **complementary** (large discrete contracts vs continuous stream) |
 | Cross-chain | `@circle-fin/app-kit` | adapter pattern (planned) |
 | Smart accounts | ZeroDev / Pimlico | optional layer on top (protocol session keys built-in) |
-| **Streaming payments** | *(gap)* | **★ Arc402** |
+| **Streaming payments** | *(gap)* | **★ Cadence (Arc402 protocol)** |
 
 See [`docs/spec.md`](docs/spec.md) for full positioning.
 

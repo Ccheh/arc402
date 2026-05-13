@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Arc Testnet](https://img.shields.io/badge/Arc%20Testnet-V2%20live-blue)](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d)
-[![Tests](https://img.shields.io/badge/tests-57%2F57%20passing-success)](#)
+[![Tests](https://img.shields.io/badge/tests-34%20forge%20%2B%2027%20SDK%20passing-success)](#)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-blue)](contracts/foundry.toml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](sdk-ts/tsconfig.json)
 
@@ -27,7 +27,8 @@ On **2026-04-29 Circle officially shipped [Agent Stack](https://agents.circle.co
 - **Zero on-chain overhead per request** — claims are signed off-chain
 - **Gas-free agent onboarding** via the sponsorship pattern (third party funds agent's escrow)
 - **Session keys** so the agent's master key never touches a hot service
-- **Composable with Circle's stack**: ERC-8183 (discrete jobs), ERC-8004 (agent identity), Agent Stack (wallets + marketplace)
+- **Composable with Circle's stack**: ERC-8183 (discrete jobs), ERC-8004 (agent identity), Agent Stack (wallets + marketplace), and Circle Gateway for outflow ([example](sdk-ts/examples/with-gateway.ts))
+- **Native to the Python AI stack** via [`@cadence-sdk`](sdk-py/) — FastAPI `require_payment_fastapi` + Flask decorator + `settle_batch`, 18 pytest tests passing
 
 ## On-chain status
 
@@ -56,6 +57,7 @@ On **2026-04-29 Circle officially shipped [Agent Stack](https://agents.circle.co
 | **5/5 adversarial attacks blocked** | replay, expired, wrong-service, forged-sig, V1→V2 cross-version — each reverted with correct custom error |
 | **depositFor sponsorship** | agents zero-gas onboarded via main wallet pre-funding their escrow |
 | **LLM-style paid endpoint** (3 agents × 2 calls, batched) | OpenAI-compatible `/v1/chat/completions` priced at 0.005 USDC/call; 106ms avg latency; 6 claims settled in [`0xd93df460...`](https://testnet.arcscan.app/tx/0xd93df4607856fa09d06e76b54dd98d05ceaf6c2a167a79108f2bfa17f3be3a97) |
+| **Cross-protocol integration with Crucible** (1 routine Cadence call + 1 Crucible-routed quality-attested call, same SERVICE) | Cadence deposit [`0xe5d0f7aa...`](https://testnet.arcscan.app/tx/0xe5d0f7aa2c5225079d20f9aa48616de97931d0b321002b7882752af08adfaa2a) · Crucible openMarket [`0x3fa47a01...`](https://testnet.arcscan.app/tx/0x3fa47a01aca51d2b53cda1ee652cea1874ab0b93c3ca5b2e5219e597efbd14b5) · Crucible collect (scoreBps=10000) [`0x0a1f6ab9...`](https://testnet.arcscan.app/tx/0x0a1f6ab91d8423fe19d1da151f94a57fb638d3d256e441028657f91b0d437f8b) · Cadence settleBatch [`0xe5c15625...`](https://testnet.arcscan.app/tx/0xe5c15625ac20854cd8a3da968ccc393ea385ed2b6bcc3c4c798484af3f637f0c). Orchestration script: [`hackathon-submission/integration/cross-protocol.ts`](https://github.com/Ccheh/arc402/tree/main) (separate repo) |
 | **Single lifecycle** (V1 origin demo) | deposit / 402 / sign / settle — [`0x1931d9...`](https://testnet.arcscan.app/tx/0x1931d96f0f5ce0037d632325383d78e88f0386978251cd663d96ddb27d3b58e3) |
 
 ## Economics on real Arc Testnet (measured, not modeled)
@@ -78,7 +80,7 @@ git clone https://github.com/Ccheh/arc402.git
 cd arc402
 git submodule update --init --recursive
 
-# 1. Run all 30 contract tests (V1 + V2 + fuzz + gas curve)
+# 1. Run all 34 contract tests (V1 + V2 + invariants + fuzz + gas curve)
 cd contracts && forge test -vv
 
 # 2. Reproduce the 20-claim batch settlement on live Arc Testnet
@@ -111,6 +113,32 @@ npx tsx examples/llm-paid-demo.ts
                   Settle:    1 tx settles N claims → service gets USDC
 ```
 
+## Cadence + Circle Gateway — composing them
+
+Cadence and Circle Gateway are **complementary, not competing**. They split the
+service-side payment problem at the natural seam: **collection** vs **routing**.
+
+```
+   Agent ──Cadence──▶ Service wallet (Arc) ──Gateway──▶ Base / ETH / Op / Arb
+   per-call sigs        per-batch USDC            cross-chain settlement
+   (off-chain)          (1 tx settles N)          (Circle hosted)
+```
+
+| Layer | What it does | Where it runs |
+|---|---|---|
+| **Cadence** | Collect per-call EIP-712 claims from agents, batch-settle N claims on Arc in one tx (~32-37k gas/claim) | On-chain, Arc Testnet/Mainnet, self-hosted by the service |
+| **Circle Gateway** | Route the resulting USDC across chains (CCTP), settle to wherever the service treasury lives | Circle hosted infrastructure, requires Circle account |
+
+A working Cadence + Gateway pattern walks through this in
+[`sdk-ts/examples/with-gateway.ts`](sdk-ts/examples/with-gateway.ts) — runs the
+Cadence batch settlement live on Arc Testnet, then documents the Gateway
+handoff call (which requires a Circle account so we document rather than
+execute it).
+
+**Key positioning takeaway**: a real Cadence deployment ends where Gateway
+begins. Cadence is the seller-side middleware that produces the USDC stream
+Gateway routes. Treating them as alternatives is a category error.
+
 ## Where Cadence fits in Circle's stack
 
 | Layer | Tool | Cadence's relationship |
@@ -128,7 +156,7 @@ See [`docs/spec.md`](docs/spec.md) for full positioning.
 Cadence is a portfolio-quality reference implementation, not a production payment rail. Things to know before depending on it:
 
 - **No production adopters yet.** Every transaction on Arc Testnet was generated by our own scripts. We have not yet seen a third-party service integrate Cadence for real traffic.
-- **Pre-audit.** 57 forge tests pass and 5/5 adversarial scenarios are blocked, but no independent security audit has been performed. Treat as testnet-only.
+- **Pre-audit.** 34 forge tests + 27 SDK vitest tests pass, 5/5 adversarial scenarios are blocked, and [`audits/slither-report.md`](audits/slither-report.md) reports no high or medium severity findings. No independent security audit has been performed yet — treat as testnet-only.
 - **Circle's official Nanopayments covers the same architectural ground.** If you don't need self-hosting or forkable code, prefer the official version — it has Circle's reliability guarantees and direct support.
 - **Sub-millicent payments not viable** at observed Arc gas prices (20 gwei). The $0.001/call price point lands at -38% margin even when batched. Truly nano payments need state channels or Merkle batching — out of scope for this version.
 - **The "streaming" framing is one-shot escrow + signed claims**, not literal per-second streaming. Each claim is an off-chain EIP-712 signature; on-chain settlement is batched. This is correct architecture but worth being precise about.
@@ -137,10 +165,10 @@ Cadence is a portfolio-quality reference implementation, not a production paymen
 
 | Folder | Purpose |
 |---|---|
-| [`contracts/`](contracts/) | Solidity — `PaymentEscrow.sol` (V1) + `PaymentEscrowV2.sol` (current) + 30 tests |
+| [`contracts/`](contracts/) | Solidity — `PaymentEscrow.sol` (V1) + `PaymentEscrowV2.sol` (current) + 34 tests |
 | [`sdk-ts/`](sdk-ts/) | TypeScript SDK — `requirePayment` middleware, `AgentClient`, `settle`, `settleBatch` |
 | [`sdk-ts/examples/`](sdk-ts/examples/) | Live Arc Testnet demos: `run.ts`, `stress-batch.ts`, `adversarial.ts` |
-| [`sdk-py/`](sdk-py/) | Python SDK (W3) |
+| [`sdk-py/`](sdk-py/) | Python SDK — agent (`AgentClient`) + service-side (FastAPI / Flask middleware, `verify_claim`, `settle_batch`). 18 pytest tests passing |
 | [`web/`](web/) | Static landing page (deployable to GitHub Pages / Vercel zero-config) |
 | [`docs/`](docs/) | Protocol spec, positioning |
 

@@ -38,8 +38,10 @@ venv/
 
 # Private working files (LOI drafts, daily checklists, scratch)
 private/
+docs/prompts/
+docs/strategy-*.md
 
-# Claude Code session state
+# Local editor / agent session state
 .claude/
 
 # OS / Editor

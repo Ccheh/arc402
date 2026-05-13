@@ -12,6 +12,13 @@ from cadence.constants import (
     REQUIRED_HEADER,
     ArcChain,
 )
+from cadence.server import (
+    ClaimVerificationError,
+    require_payment_fastapi,
+    require_payment_flask,
+    settle_batch,
+    verify_claim,
+)
 from cadence.types import ClaimAuth
 from cadence.utils import (
     build_domain,
@@ -22,7 +29,7 @@ from cadence.utils import (
     random_nonce,
 )
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 __all__ = [
     "__version__",
@@ -30,6 +37,7 @@ __all__ = [
     "ARC_TESTNET",
     "ArcChain",
     "ClaimAuth",
+    "ClaimVerificationError",
     "CLAIM_HEADER",
     "REQUIRED_HEADER",
     "PAYMENT_ESCROW_ABI",
@@ -39,4 +47,8 @@ __all__ = [
     "format_usdc",
     "parse_usdc",
     "random_nonce",
+    "require_payment_fastapi",
+    "require_payment_flask",
+    "settle_batch",
+    "verify_claim",
 ]

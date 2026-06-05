@@ -1,7 +1,7 @@
 # Circle Developer Grant — Cadence (Arc402 protocol)
 
 > **Working draft** — copy/paste fields into [circle.questbook.app](https://circle.questbook.app/) when ready to submit.
-> Author: Zen Chen. Last revised: 2026-05-12.
+> Author: Zen Chen. Last revised: 2026-06-03.
 
 ---
 
@@ -14,16 +14,37 @@
 Streaming USDC micropayments for AI agents on Arc — sub-cent per-call billing with zero on-chain overhead per request.
 
 ## Field 3: Project URL / GitHub
-- GitHub: **https://github.com/Ccheh/arc402** (public, MIT, 57 passing tests)
+- GitHub: **https://github.com/Ccheh/arc402** (public, MIT, 79 passing tests)
 - Live contract: [`0xc95b1b20...82f8d` on Arc Testnet](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d)
 - Spec: [`docs/spec.md`](https://github.com/Ccheh/arc402/blob/main/docs/spec.md)
 
 ---
 
+## Positioning — winning the seller side of the agentic-payments race (2026 Arc track)
+
+**One line.** Cadence (Arc402) is the open-source, permissionless, self-hostable **seller-side layer** for agentic USDC payments on Arc — letting any developer accept per-call USDC **without an approval form**, settling through the same Nanopayments + Gateway pattern Circle already ships.
+
+**The contested frontier.** Agentic payments is where the closed networks are converging — **Stripe (Tempo / Machine Payment Protocol), Visa & Mastercard agent rails, and Google's AP2.** Circle's structural edge is USDC-native settlement on Arc: gas-free sub-cent charges, ~1-second finality, and an open standards stack (x402, EIP-712/3009, ERC-8004 identity, ERC-8183 jobs). Cadence turns that edge into something a developer adopts in an afternoon — which is how Circle wins the **seller side** before the closed networks lock it up.
+
+**The gap.** Circle has shipped the rails and the demand side (Nanopayments, Gateway, Agent Marketplace, Agent Stack), but listing a paid agent service still runs through a gated approval form. For the agentic economy to compound, *any* developer needs to stand up a paid endpoint **permissionlessly, in minutes, in the language they already use.** Cadence is that missing seller-side middleware — the open, self-hostable counterpart to the Agent Marketplace, and exactly the "seller-side middleware reference" Tim Baker called for.
+
+**Capability fit (the gaps builders cite):** gas-free sub-cent nanopayments · sub-second settlement · first-class AI-framework integration (Claude / MCP / LangChain) · SDKs in TypeScript and Python — all live today.
+
+**Why it strengthens Circle, not competes.** Every paid call is USDC on Arc, so adopting Cadence *is* adopting USDC + Arc + the Circle agentic stack — working seller-side proof for the "Circle is a developer platform, not just a stablecoin issuer" narrative. It composes with Nanopayments + Gateway, reads ERC-8004 identity, and complements ERC-8183 jobs.
+
+| Listing a paid agent service | How |
+|---|---|
+| Circle Agent Marketplace | gated — approval form, Circle-hosted |
+| Stripe Tempo / Visa·MC / Google AP2 | closed networks, not USDC/Arc-native |
+| **Cadence (Arc402)** | **permissionless · self-hostable · open-source · USDC-on-Arc-native** |
+
+---
+
 ## Field 4: The problem we're solving
 
-Today's AI agent ecosystem has no clean way to charge **per-API-call** in stablecoins. Existing primitives don't fit:
+Today's AI agent ecosystem has no clean way to charge **per-API-call** in stablecoins **with permissionless deployment**. Existing primitives partially fit, but each leaves a gap Cadence addresses:
 
+- **Circle Nanopayments** (announced 2026-04-29, ships the official `withGateway()` middleware in `@circle-fin/x402-batching/client`) covers the protocol pattern (x402 + Gateway batched settlement) but is **gated**: sellers list at `agents.circle.com` only by application/form. Cadence is the **permissionless, open-source seller-side reference** Tim Baker publicly called for in that same blog (§ "Get Involved" → "Seller-side middleware examples"). Same protocol, different deployment posture — the GitHub vs GitHub Enterprise / WordPress.org vs WordPress.com dynamic.
 - **ERC-8183** (job escrow) is multi-tx and evaluator-gated — overkill for "charge $0.001 per LLM call."
 - **`@circle-fin/app-kit`** covers bridging/swapping/sending, not per-call billing.
 - **Stripe / traditional billing** requires accounts, API keys, KYC, and fiat rails — incompatible with autonomous agents.
@@ -75,14 +96,14 @@ All of the following is **live and verifiable on Arc Testnet today**:
 | Artifact | Evidence |
 |---|---|
 | `PaymentEscrowV2` contract deployed | [`0xc95b1b20...82f8d`](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d) |
-| 30 contract tests passing (15 V1 + 15 V2 + fuzz + gas curve) | `forge test` in CI |
-| 27 SDK tests passing (utils, signing, middleware) | `npm test` in `sdk-ts/` |
+| 34 contract tests passing (15 V1 + 15 V2 + 3 invariants) | `forge test` in CI |
+| 45 SDK tests passing (27 TypeScript + 18 Python) | `npm test` (TS) + `pytest` (Python) |
 | Gas curve measured | single 69k → batched 32k per claim (52% reduction) |
 | 20-claim batched settlement on chain (5 agents × 4 claims) | [tx `0xce39b45b...`](https://testnet.arcscan.app/tx/0xce39b45baeab833ce3e02b96c3893a4511f5d4e94db27f9589162a7f66056f81) |
 | 6-claim LLM endpoint settlement (3 agents × 2 calls @ 0.005 USDC) | [tx `0xd93df460...`](https://testnet.arcscan.app/tx/0xd93df4607856fa09d06e76b54dd98d05ceaf6c2a167a79108f2bfa17f3be3a97) |
 | 5 adversarial attacks all reverted with correct custom errors | replay / expired / wrong-service / forged-sig / V1-V2 cross-version |
 | EIP-712 cross-version safety | V1 sigs cannot replay on V2 (verified on chain) |
-| TypeScript SDK shipped | `@arc402/sdk` v0.0.1 — `requirePayment` middleware, `AgentClient`, `settle`, `settleBatch` |
+| TypeScript + Python SDKs shipped | `@arc402/sdk` (TS) + `cadence-sdk` (Python) — `requirePayment` middleware, `AgentClient`, `settle`, `settleBatch` |
 | OpenAI-compatible paid endpoint demo | 106ms avg latency, real USDC settled on chain |
 | Public OSS repo with MIT license | https://github.com/Ccheh/arc402 |
 
@@ -106,10 +127,11 @@ I propose 5 milestones at 2-3 week cadence. Each is verifiable on-chain or in Gi
 - Verification: public audit report + mainnet contract address.
 - **Disbursement: $10,000**
 
-### M3 (Week 6): Multi-language SDKs + ERC-8004 integration
-- Ship `cadence-py` Python SDK with parity to TypeScript.
-- Implement `ERC-8004` agent-identity read in `requirePayment` middleware so services can apply per-identity policies (rate limits, reputation discounts).
-- Verification: PyPI package + middleware example reading 8004 identity for a real agent.
+### M3 (Week 6): MCP / AI-framework integration + SDK hardening
+- **Already delivered pre-grant:** Python SDK (`cadence-sdk`, parity with TypeScript) and inline `ERC-8004` agent-identity reads in `requirePayment` middleware.
+- New in this milestone: ship an **MCP server adapter** so a Claude / LangChain agent can discover an Arc402 endpoint and settle per call in a few lines — the AI-framework integration builders ask for, and the seller-side contribution Tim Baker called for.
+- Harden both SDKs and publish `llms.txt` + AI-native docs.
+- Verification: published MCP adapter + a Claude/MCP agent paying an Arc402 endpoint on testnet + docs live.
 - **Disbursement: $5,000**
 
 ### M4 (Week 9): Developer experience + dashboard
@@ -159,7 +181,7 @@ I propose 5 milestones at 2-3 week cadence. Each is verifiable on-chain or in Gi
 **Honest status: pre-launch, no paying users yet.** What we have instead:
 
 - **Working product** (not just specs) — anyone can clone the repo and reproduce all 5 live testnet demos in 5 minutes.
-- **30 + 27 = 57 passing tests** with fuzz coverage and gas measurements.
+- **34 + 45 = 79 passing tests** (contract + TS/Python SDK) with fuzz coverage and gas measurements.
 - **5 adversarial attacks blocked live on chain** — economic security verified, not just simulated.
 - **Open OSS** — MIT, public from day 1.
 - **Strategic positioning** validated against Circle's announced direction (ERC-8004 / ERC-8183 / App Kit / Architects program) — Cadence sits in the explicitly-named gap.
@@ -178,6 +200,9 @@ Cadence is **complementary**, not competitive, to every layer Circle already shi
 | **USDC** | The settlement asset | Required substrate |
 | **Arc chain** | Stablecoin-native L1 | Required substrate (uses 18-decimal native gas) |
 | **`@circle-fin/app-kit`** | Bridge / Swap / Send / Unified Balance | Cadence ships as **App Kit adapter** for "paid endpoint" workflows (planned M3) |
+| **Circle Nanopayments + `withGateway()` middleware** | Official x402 + Gateway batched-settlement protocol + seller middleware (announced 2026-04-29) | **Compose, don't replace** — Cadence is the OSS self-hosted alternative-deployment Tim Baker publicly called for; Cadence-protected sellers can still accept Gateway-funded payments |
+| **`agents.circle.com` (Agent Marketplace)** | Curated listing of paid agentic endpoints (537 endpoints / 42 services as of 2026-05-12) | Cadence-protected endpoints can be listed (manually); also self-discoverable for builders who don't apply through the form |
+| **Arc Escrow sample (`circlefin/arc-escrow`)** | AI-validated multi-step escrow with OpenAI vision model evaluation, EIP-712 Refund Protocol | **Different lane** — Arc Escrow is project/job escrow (Upwork-style); Cadence is per-request metering (AWS-style). Both compose: Cadence handles the per-call cost layer inside an Arc Escrow job |
 | **ERC-8183 (job escrow)** | Discrete, evaluator-gated job contracts | **Complementary** — Cadence covers the streaming case 8183 doesn't fit |
 | **ERC-8004 (agent identity)** | Onchain agent identity + reputation | Cadence **consumes** 8004 for trust signals in middleware (planned M3) |
 | **ZeroDev / Pimlico (AA)** | Smart accounts | Cadence ships protocol-level session keys; complements third-party AA |
@@ -196,6 +221,6 @@ Cadence is **complementary**, not competitive, to every layer Circle already shi
 
 ## Cover note for the form (use as introduction)
 
-> Cadence is the streaming-payment SDK for AI agents on Circle's Arc, built on the open Arc402 protocol. We've shipped a complete working system — `PaymentEscrowV2` deployed on testnet, batched settlement verified at 52% gas reduction, 5 adversarial attacks blocked on chain, 57 tests passing, an OpenAI-compatible paid endpoint demo, and a public OSS repo — over the last 48 hours. Everything in this proposal is reproducible in 5 minutes from the README.
+> Cadence is the streaming-payment SDK for AI agents on Circle's Arc, built on the open Arc402 protocol. We've shipped a complete working system — `PaymentEscrowV2` deployed on testnet, batched settlement verified at 52% gas reduction, 5 adversarial attacks blocked on chain, 79 tests passing, an OpenAI-compatible paid endpoint demo, and a public OSS repo. Everything in this proposal is reproducible in 5 minutes from the README.
 >
 > The 12-week, 5-milestone plan ($25K total) gets Cadence from "verified on testnet" to "$10K real settled volume on mainnet with audit complete and at least one major AI tool integrated."

@@ -15,6 +15,8 @@
 
 **Conclusion**: Cadence's two differentiators against Circle Nanopayments are now (a) permissionless self-hosting and (b) **two AI-native primitives Circle's settlement layer structurally can't deliver**: reputation-tiered pricing via ERC-8004 (live) and refundable claims (v0.3 design).
 
+> **Strategic frame (2026 Arc track):** the alternatives Circle itself benchmarks against for *agentic* payments are the closed networks — **Stripe Tempo, Visa/Mastercard agent rails, Google AP2** (see §0a). Cadence is the permissionless, USDC-on-Arc seller layer that lets Circle win the builder long tail before those networks lock it up.
+
 ## 0. vs Circle Nanopayments (Apr 29 2026 — the critical comparison)
 
 **What Circle shipped**: An official x402 + Gateway batched-settlement product, announced 2026-04-29 by Tim Baker. Functionally the same protocol pattern as Arc402 — HTTP 402 negotiation, off-chain auth, batched on-chain settlement.
@@ -31,6 +33,7 @@
 |---|---|---|
 | Source / license | Closed product, Circle-operated | MIT-licensed, deployable by anyone |
 | Seller onboarding | Form-gated (`agents.circle.com` review) | Permissionless — clone repo, deploy contract, run middleware |
+| Seller middleware API | `withGateway(handler, "$0.001", path)` from `@circle-fin/x402-batching/client` (managed: requires Circle Gateway + Balance API) | `requirePayment({ amount, recipient })` from `@arc402/sdk` (pure local: verifies EIP-712 sig + escrow balance, zero Circle dependency) |
 | Signing scheme | EIP-3009 (single-tx authorization) | EIP-712 custom domain (versioned, replay-isolated across V_n → V_{n+1}) |
 | Identity awareness | None at settlement | **Reputation-tiered pricing via ERC-8004 (live)** — different price for verified vs unverified agents, evaluated inline in middleware |
 | Quality / SLA | None | **Refundable claims** (v0.3 design proposal in spec.md §12) — opt-in dispute window before service collects |
@@ -43,6 +46,19 @@
 
 Both Nanopayments and Cadence can win simultaneously, in different deployment postures (managed-platform vs self-hosted reference). This is the GitHub vs GitHub Enterprise dynamic, the WordPress.com vs WordPress.org dynamic.
 
+## 0a. vs the closed agentic-payment networks — Stripe Tempo, Visa/MC agent rails, Google AP2
+
+These are the alternatives **Circle itself benchmarks against** for agentic payments (surfaced directly in Circle's 2026 developer brand survey, which asks builders which they'd "reach for first" for agentic payments). They are the strategic reason an open, USDC-on-Arc seller layer matters.
+
+| | Settlement asset | Open / self-host | Permissionless seller | AI-framework native |
+|---|---|---|---|---|
+| Stripe Tempo / Machine Payment Protocol | fiat + stablecoin (managed) | ❌ closed | ❌ Stripe account / KYC | partial |
+| Visa / Mastercard agent rails | card networks | ❌ closed | ❌ network onboarding | ❌ |
+| Google AP2 (Agent Payments Protocol) | processor-agnostic | spec open, impls vary | depends on processor | ✅ (Google ecosystem) |
+| **Cadence (Arc402) on Arc** | **USDC (native gas)** | **✅ MIT, self-host** | **✅ clone + deploy** | **✅ Claude / MCP / LangChain** |
+
+**The point for the Grant**: Circle's edge in this race is USDC-native settlement on Arc — but that edge only compounds if developers can stand up paid endpoints **without a gatekeeper.** The closed networks onboard sellers through accounts and approval; even Circle's own Agent Marketplace is form-gated. Cadence is the permissionless, open-source seller layer that lets Circle capture the long tail of builders before the closed networks lock it up. It does not compete with Nanopayments — it is the self-hosted reference deployment that makes the whole pattern adoptable, and it reinforces the "Circle is a developer platform, not just a stablecoin issuer" narrative with working seller-side proof.
+
 ## 0b. vs Crumb (Arc hackathon spotlight 2026-04-30)
 
 **What Crumb is**: A merchant-facing product built on Circle Nanopayments, settling on Arc. Use cases: pay-per-use APIs, QR/peer transfers, merchant checkout. Founder Taylor Ferran, spotlight video with Sam Sealey (Circle Director of Community) at 29.6K views.
@@ -52,6 +68,28 @@ Both Nanopayments and Cadence can win simultaneously, in different deployment po
 - Cadence = **developer layer** (like Stripe.js + Stripe Connect — backend SDK + protocol)
 
 Different markets, different audiences. Crumb sells to coffeeshops; Cadence sells to backend developers shipping AI tools. The two can coexist; Crumb could even use Cadence under the hood.
+
+## 0c. vs Arc Escrow sample (`circlefin/arc-escrow`)
+
+**What Arc Escrow is**: Circle's **official sample application** demonstrating AI-validated escrow on Arc. Buyer creates an escrow contract, deposits USDC, an AI agent submits a deliverable, an **OpenAI vision model** evaluates the submission, funds release on approval or refund on rejection. Uses an **EIP-712 "Refund Protocol"** signing scheme, deployed via Circle's `smart-contract-platform` and orchestrated through Circle Developer-Controlled Wallets API + Console webhooks. Repo: `github.com/circlefin/arc-escrow`. Stack: Next.js + Supabase + Circle managed wallet service.
+
+**Why Cadence and Arc Escrow are different lanes, not competitors**:
+
+| Dimension | Arc Escrow sample | Cadence/Arc402 |
+|---|---|---|
+| Payment model | **Discrete, multi-step**: create → deposit → submit → validate → release/refund | **Continuous, per-request**: deposit once, sign many claims, batched settle |
+| Closest analogy | Upwork / deliverable-bounty / project escrow | AWS metered billing / Stripe pay-per-use |
+| Deliverable validation | **AI vision-model evaluation** (OpenAI) — opinionated approval gate | None at protocol — service just collects when claim is valid |
+| Tx count per "job" | 4-5 (create, fund, submit, decide, release) | 1-batch for *N* claims (≪1 tx per call) |
+| Infrastructure deps | Circle Developer-Controlled Wallets API + Console webhooks + Supabase | Pure local middleware; only RPC + contract |
+| Granularity ceiling | Project-level ($1-$10000+) | Sub-cent to dollar per call |
+| Standard alignment | ERC-8183-style (job lifecycle) | x402-style (per-request HTTP 402) |
+
+**The two compose naturally**:
+- An ERC-8183 / Arc Escrow **job** can have its per-step compute / data / API costs **metered through Cadence**.
+- Example: a 2-week agent-built market-research project is escrowed in Arc Escrow; the agent's underlying LLM/search/scraping calls during the work are paid via Cadence-protected endpoints; the AI vision model validates the final deliverable; final funds release through escrow.
+
+**Practical docs implication**: Cadence's documentation should explicitly cross-reference Arc Escrow — "Use Cadence for streaming per-request payments. Use Arc Escrow or ERC-8183 when you need AI-validated work acceptance before funds release. The two are often used together inside the same agent product."
 
 
 

@@ -5,7 +5,7 @@ import type { ArcChain, Hex } from "./types.js";
 /**
  * Canonical ERC-8004 registry deployments on Arc Testnet.
  * All three vanity-prefixed with 0x8004 to encode the EIP number.
- * Source: https://docs.arc.network/arc/tutorials/register-your-first-ai-agent
+ * Source: https://docs.arc.io/arc/tutorials/register-your-first-ai-agent
  */
 export const ERC8004_ARC_TESTNET = {
   identityRegistry: "0x8004A818BFB912233c491871b3d84c89A494BD9e" as Hex,

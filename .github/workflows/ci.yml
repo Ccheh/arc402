@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  contracts:
+    name: Solidity (Foundry)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Show tool versions
+        run: |
+          forge --version
+          cast --version
+          anvil --version
+
+      - name: forge build
+        run: forge build --sizes
+
+      - name: forge test (V1 + V2 + fuzz + gas curve)
+        run: forge test -vv
+
+  sdk-ts:
+    name: TypeScript SDK (vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk-ts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: sdk-ts/package-lock.json
+
+      - run: npm ci
+      - run: npm run test
+
+  sdk-py:
+    name: Python SDK (smoke import)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk-py
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Smoke import
+        run: |
+          python -c "from cadence import AgentClient, parse_usdc, format_usdc, build_domain, ARC_TESTNET; \
+            print('AgentClient:', AgentClient); \
+            print('parse_usdc 0.05 ->', parse_usdc('0.05')); \
+            print('format_usdc 50000000000000000 ->', format_usdc(50000000000000000)); \
+            print('domain:', build_domain('0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d', 5042002));"

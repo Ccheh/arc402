@@ -1,5 +1,6 @@
 # Cadence
 
+[![CI](https://github.com/Ccheh/arc402/actions/workflows/ci.yml/badge.svg)](https://github.com/Ccheh/arc402/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Arc Testnet](https://img.shields.io/badge/Arc%20Testnet-V2%20live-blue)](https://testnet.arcscan.app/address/0xc95b1b20f91901206ba3ea94bbc7313e7cd82f8d)
 [![Tests](https://img.shields.io/badge/tests-34%20forge%20%2B%2027%20SDK%20passing-success)](#)

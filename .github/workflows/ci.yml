@@ -52,7 +52,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: sdk-ts/package-lock.json
 
-      - run: npm ci
+      # npm install (not ci): lockfile is authored on Windows, and npm's known
+      # cross-platform bug drops foreign-platform optional deps (wasm32 bindings),
+      # which makes `npm ci`'s strict sync check fail on Linux runners.
+      - run: npm install --no-audit --no-fund
       - run: npm run test
 
   sdk-py:
